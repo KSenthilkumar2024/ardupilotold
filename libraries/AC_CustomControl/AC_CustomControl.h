@@ -12,9 +12,10 @@
 #include <AP_AHRS/AP_AHRS_View.h>
 #include <AC_AttitudeControl/AC_AttitudeControl.h>
 #include <AP_Motors/AP_MotorsMulticopter.h>
+#include <AP_Logger/AP_Logger.h>
 
 #ifndef CUSTOMCONTROL_MAX_TYPES
-#define CUSTOMCONTROL_MAX_TYPES 2
+#define CUSTOMCONTROL_MAX_TYPES 3
 #endif
 
 class AC_CustomControl_Backend;
@@ -49,6 +50,7 @@ protected:
         CONT_NONE            = 0,
         CONT_EMPTY           = 1,
         CONT_PID             = 2,
+        CONT_XYZ             = 3,        
     };            // controller that should be used     
 
     enum class  CustomControlOption {
@@ -63,7 +65,7 @@ protected:
 
     // References to external libraries
     AP_AHRS_View*& _ahrs;
-    AC_AttitudeControl*& _att_control;
+   AC_AttitudeControl*& _att_controller;  
     AP_MotorsMulticopter*& _motors;
 
     AP_Enum<CustomControlType> _controller_type;
