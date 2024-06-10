@@ -65,7 +65,7 @@ protected:
 
     // References to external libraries
     AP_AHRS_View*& _ahrs;
-   AC_AttitudeControl*& _att_controller;  
+    AC_AttitudeControl*& _att_control;  
     AP_MotorsMulticopter*& _motors;
 
     AP_Enum<CustomControlType> _controller_type;

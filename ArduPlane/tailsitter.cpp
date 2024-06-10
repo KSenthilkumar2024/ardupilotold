@@ -22,6 +22,10 @@
 
 #if HAL_QUADPLANE_ENABLED
 
+static uint32_t gear_retract_timer = 0;  // June 08
+static bool gear_timer_started = false; // June 08
+const uint32_t RETRACT_DELAY_MS = 3500;   // June 08
+
 const AP_Param::GroupInfo Tailsitter::var_info[] = {
 
     // @Param: ENABLE
@@ -506,12 +510,17 @@ void Tailsitter::output(void)
 
 }
 
-
 /*
   return true when we have completed enough of a transition to switch to fixed wing control
  */
 bool Tailsitter::transition_fw_complete(void)
 {
+    #if AP_LANDINGGEAR_ENABLED 
+    // Check if the pitch exceeds the transition angle
+    if (labs(quadplane.ahrs_view->pitch_sensor) > transition_angle_fw * 100) {
+        plane.g2.landing_gear.deploy_for_landing();  // Deploy landing gear if both conditions are met
+    }
+    #endif
     if (!plane.arming.is_armed_and_safety_off()) {
         // instant transition when disarmed, no message
         return true;
@@ -551,6 +560,48 @@ bool Tailsitter::transition_vtol_complete(void) const
             return true;
         }
     }
+
+    /*----------------------------June 08-------------------------*/
+    if (plane.control_mode == &plane.mode_qloiter ||
+        plane.control_mode ==&plane.mode_qacro ||
+        plane.control_mode ==&plane.mode_qhover || 
+        plane.control_mode ==&plane.mode_qstabilize || 
+        plane.control_mode ==&plane.mode_qland || 
+        plane.control_mode ==&plane.mode_qrtl){
+            if (!gear_timer_started) {
+                gear_retract_timer = AP_HAL::millis();
+                gear_timer_started = true;
+        }
+            if (gear_timer_started && (AP_HAL::millis() - gear_retract_timer >= RETRACT_DELAY_MS)) {
+                // Code to retract landing gear, ensure AP_LANDINGGEAR_ENABLED is defined
+
+                #if AP_LANDINGGEAR_ENABLED
+                    plane.g2.landing_gear.retract_after_takeoff();
+                #endif
+
+            // Reset the timer to prevent further retraction
+            gear_timer_started = false;
+        }
+    } else {
+        // Reset the timer if not in VTOL mode
+        gear_timer_started = false;
+    }
+    if(plane.control_mode == &plane.mode_loiter ||
+        plane.control_mode ==&plane.mode_acro || 
+        plane.control_mode ==&plane.mode_stabilize || 
+        plane.control_mode ==&plane.mode_auto || 
+        plane.control_mode ==&plane.mode_circle ||
+        plane.control_mode ==&plane.mode_fbwa ||
+        plane.control_mode ==&plane.mode_fbwb ||
+        plane.control_mode ==&plane.mode_manual ||
+        plane.control_mode ==&plane.mode_training ||
+        plane.control_mode ==&plane.mode_cruise) {
+    // Deploy the landing gear in all other modes
+        #if AP_LANDINGGEAR_ENABLED 
+        plane.g2.landing_gear.deploy_for_landing();  // Assuming a 'deploy' method exists in the landing gear subsystem
+        #endif
+     }
+     
     const float trans_angle = get_transition_angle_vtol();
     if (labs(plane.ahrs.pitch_sensor) > trans_angle*100) {
         gcs().send_text(MAV_SEVERITY_INFO, "Transition VTOL done");

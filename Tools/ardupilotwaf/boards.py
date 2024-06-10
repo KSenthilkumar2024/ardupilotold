@@ -139,8 +139,7 @@ class Board:
                 AP_CUSTOMCONTROL_ENABLED=1,
             )
             env.AP_LIBRARIES += [
-                'AC_CustomControl',
-                'AC_Simulnk'
+                'AC_CustomControl'
             ]
             cfg.msg("Enabled custom controller", 'yes')
         else:
